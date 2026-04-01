@@ -49,4 +49,6 @@ Each calculator ships as a Python script, an R script, and a parity test.
 
 - [ ] **rpy2 bridge to rpact** — single most impactful architectural addition; unlocks group sequential, adaptive, and survival sizing from Python
 - [ ] **Missing data / estimand planning** — tipping-point analyses, pattern-mixture models, ICH E9(R1) framework
-- [ ] **Stratified randomization planning** — block sizes, Pocock-Simon minimization
+- [x] **Stratified randomization planning** (permuted blocks within strata, varying block sizes)
+  - `scripts/stratified_randomization.py` / `.R`
+  - `scripts/tests/test_stratified_randomization_parity.py` — 8 tests
