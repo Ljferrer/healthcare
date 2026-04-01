@@ -28,9 +28,10 @@ Each calculator ships as a Python script, an R script, and a parity test.
 - [ ] **Group sequential interim analysis** (Lan-DeMets alpha-spending, O'Brien-Fleming)
   - Deps: rpact via rpy2 (Python), rpact (R)
   - Key: alpha-spending function, futility boundaries, information fractions
-- [ ] **Multiplicity adjustment** (graphical procedures of Bretz et al., Holm, fallback)
-  - Deps: statsmodels `multipletests` covers p-value corrections; graphical needs custom impl
-  - Key: directed weighted graph of hypotheses with alpha redistribution
+- [x] **Multiplicity adjustment** (Bonferroni, Holm step-down, Hochberg step-up)
+  - `scripts/multiplicity_adjustment.py` / `.R`
+  - `scripts/tests/test_multiplicity_parity.py` — 11 tests
+  - Note: graphical Bretz procedure not yet implemented
 
 ## Tier 3 — Advanced, growing regulatory importance
 
