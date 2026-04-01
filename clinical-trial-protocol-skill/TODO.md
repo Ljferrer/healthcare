@@ -37,9 +37,9 @@ Each calculator ships as a Python script, an R script, and a parity test.
 - [x] **Bayesian assurance** (expected power via Monte Carlo over normal prior)
   - `scripts/bayesian_assurance.py` / `.R`
   - `scripts/tests/test_assurance_parity.py` — 8 tests
-- [ ] **Adaptive design operating characteristics** (simulation-based)
-  - Deps: numpy/scipy + rpact for boundaries
-  - Key: sample size re-estimation, combination tests, 10k+ simulated trials
+- [x] **Adaptive design operating characteristics** (two-stage simulation, inverse normal combination test)
+  - `scripts/adaptive_design_oc.py` / `.R`
+  - `scripts/tests/test_adaptive_design_parity.py` — 8 tests
 - [x] **Cluster randomized trial sizing** (design effect DEFF = 1 + (m-1)*ICC)
   - `scripts/cluster_sample_size.py` / `.R`
   - `scripts/tests/test_cluster_parity.py` — 10 tests
