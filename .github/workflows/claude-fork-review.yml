@@ -1,0 +1,76 @@
+name: Claude Fork Review
+
+# Maintainer-triggered code review for fork PRs.
+#
+# The same-repo "Claude Code Review" workflow skips fork PRs: GitHub withholds
+# id-token from fork-triggered runs, so the WIF exchange can't run. To review a
+# fork PR, a maintainer dispatches this workflow with the PR number.
+#
+# Why workflow_dispatch (matching anthropics/claude-cookbooks): GitHub only
+# allows users with write access to dispatch a workflow, so the dispatch itself
+# is the human approval — a maintainer looks before the review runs. This avoids
+# `pull_request_target`, which Anthropic OSS deliberately doesn't use for review
+# (it would run with the base repo's privileges on a fork trigger).
+#
+# The separate fork-notice job uses pull_request_target only to post a fixed
+# comment when a fork PR opens. It never checks out or runs fork code and holds
+# only pull-requests:write — a safe use of the trigger per GitHub guidance.
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to review'
+        required: true
+        type: number
+  pull_request_target:
+    types: [opened]
+
+jobs:
+  fork-notice:
+    if: >-
+      github.event_name == 'pull_request_target' &&
+      github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Post fork review instructions
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr comment "$PR_NUMBER" --repo "$REPO" --body "Thanks for the contribution! Because this PR comes from a fork, the automatic Claude code review can't run on it (GitHub withholds the credentials it needs from fork-triggered workflows).
+
+          A maintainer can run the same review on demand from the **Actions → Claude Fork Review** workflow (or \`gh workflow run claude-fork-review.yml -f pr_number=$PR_NUMBER\`). Maintainers can also mention \`@claude\` in a comment to ask questions about the changes interactively."
+
+  claude-review:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write # Anthropic Workload Identity Federation
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: refs/pull/${{ inputs.pr_number }}/head
+
+      - name: Run Claude Code Review
+        uses: anthropics/claude-code-action@v1
+        with:
+          # Auth via workload identity federation: the workflow's GitHub OIDC token is
+          # exchanged for short-lived Claude API credentials (requires id-token: write).
+          anthropic_federation_rule_id: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
+          anthropic_organization_id: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
+          plugins: 'code-review@claude-code-plugins'
+          prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ inputs.pr_number }}'
+          # Read-only review: gh/git inspection, file reads, and posting the
+          # review — no edit/write/web/execution tools. Matches the cookbooks
+          # allowlist so a malicious diff can't escalate during review.
+          claude_args: '--allowedTools "SlashCommand,Task,Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr comment:*),Bash(gh pr review:*),Bash(git diff:*),Bash(git log:*),Read,Glob,Grep"'
